@@ -1,0 +1,30 @@
+--- a/scripts/generate-bootstraps.sh
++++ b/scripts/generate-bootstraps.sh
+@@ -455,27 +455,9 @@ EOF
+ 
+ 	# Core utilities.
+ 	pull_package bash # Used by `termux-bootstrap-second-stage.sh`
+-	pull_package command-not-found
+-	pull_package curl
+ 	pull_package dash
+-	pull_package findutils
+-	pull_package gawk
+-	pull_package procps
+-	pull_package psmisc
+-	pull_package tar
+ 	pull_package termux-exec
+ 	pull_package termux-tools
+-	pull_package util-linux
+-
+-	# Additional.
+-	pull_package ed
+-	pull_package debianutils
+-	pull_package dos2unix
+-	pull_package inetutils
+-	pull_package nano
+-	pull_package net-tools
+-	pull_package patch
+-	pull_package unzip
+ 
+ 	# Handle additional packages.
+ 	for add_pkg in "${ADDITIONAL_PACKAGES[@]}"; do
