@@ -3,19 +3,6 @@ set -x
 # Wechsel zum Verzeichnis, in dem das Skript liegt
 cd "$(dirname "$0")"
 
-# Erkennen des Kerneltyps des Betriebssystems
-unameOut="$(uname -s)"
-case "${unameOut}" in
-    Linux*)     machine=Linux;;
-    Darwin*)    machine=Mac;;
-    *)          machine="OTHER:${unameOut}"
-esac
-
-if [ $machine == Mac ]; then
-    BSD_SED_BAKPATH="''"
-    echo $BSD_SED_BAKPATH
-fi
-
 # Funktion, um den Paketnamen zu überprüfen
 check_name() {
     if [[ $TERMUX_APP_PACKAGE =~ '_' ]] || \
@@ -56,8 +43,7 @@ patch_bootstraps() {
     do
         patch -p1 < "$patch" || exit 9
     done
-    # $BSD_SED_BAKPATH darf nicht erweitert werden, sonst wird es zu "''" erweitert und funktioniert nicht!
-    sed -i $BSD_SED_BAKPATH "s/TERMUX_APP_PACKAGE=\"com.fezaan.termux\"/TERMUX_APP_PACKAGE=\"$TERMUX_APP_PACKAGE\"/g" scripts/properties.sh || exit 10
+    sed -i '' "s/TERMUX_APP_PACKAGE=\"com.fezaan.termux\"/TERMUX_APP_PACKAGE=\"$TERMUX_APP_PACKAGE\"/g" scripts/properties.sh || exit 10
     popd
 }
 
@@ -92,6 +78,7 @@ migrate_termux_folder() {
     mv "${PARENT_DIR}/com/termux/"* "${DESTINATION}"
     rm -r "${PARENT_DIR}/com/termux/"
 }
+export -f migrate_termux_folder
 
 # Funktion, um die App zu patchen
 patch_app() {
@@ -105,19 +92,18 @@ patch_app() {
     TERMUX_APP_PACKAGE_UNDERSCORE=$(echo "$TERMUX_APP_PACKAGE" | tr . _)
     
     # Nur Textdateien bearbeiten, um Fehler zu vermeiden
-    # $BSD_SED_BAKPATH darf nicht erweitert werden, sonst wird es zu "''" erweitert und funktioniert nicht!
     find . -type f -exec file {} + | grep "text" | cut -d: -f1 | while read -r file; do
-        sed -i $BSD_SED_BAKPATH -e "s/>Termux</>$TERMUX_APP_PACKAGE</g" \
+        sed -i '' -e "s/>Termux</>$TERMUX_APP_PACKAGE</g" \
                   -e "s/\"Termux\"/\"$TERMUX_APP_PACKAGE\"/g" \
                   -e "s/com\.termux/$TERMUX_APP_PACKAGE/g" \
                   -e "s/com_termux/$TERMUX_APP_PACKAGE_UNDERSCORE/g" "$file"
     done
 
-    (
-	while IFS= read -r -d '' termux_folder; do
-		migrate_termux_folder "$termux_folder" "$TERMUX_APP_PACKAGE"
-	done < <(find "$(pwd)" -type d -name termux -print0)
-	)
+    # Vollständig macOS-kompatible Variante für Verzeichnismigration
+    find "$(pwd)" -type d -name termux | while read -r dir; do
+        migrate_termux_folder "$dir" "$TERMUX_APP_PACKAGE"
+    done
+
     popd
 }
 
